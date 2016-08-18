@@ -45,14 +45,10 @@
                      toPath:(NSString *)destinationPath
                       error:(NSError **)error {
     NSString *temporaryPath = [self temporaryFilePathForPath:sourcePath];
-    NSProgress *progress = [NSProgress progressWithTotalUnitCount:2];
-    [progress becomeCurrentWithPendingUnitCount:1];
     [self unGzipFileAtPath:sourcePath toPath:temporaryPath error:error];
-    [progress resignCurrent];
     if (*error != nil) {
         return NO;
     }
-    [progress becomeCurrentWithPendingUnitCount:1];
     [self unTarFileAtPath:temporaryPath toPath:destinationPath error:error];
     NSError *removeTemporaryFileError = nil;
     [[NSFileManager defaultManager] removeItemAtPath:temporaryPath error:&removeTemporaryFileError];
@@ -63,7 +59,6 @@
         *error = removeTemporaryFileError;
         return NO;
     }
-    [progress resignCurrent];
     return YES;
 }
 
@@ -85,14 +80,10 @@
                    toPath:(NSString *)destinationPath
                     error:(NSError **)error {
     NSString *temporaryPath = [self temporaryFilePathForPath:sourcePath];
-    NSProgress *progress = [NSProgress progressWithTotalUnitCount:2];
-    [progress becomeCurrentWithPendingUnitCount:1];
     [self tarFileAtPath:sourcePath toPath:temporaryPath error:error];
-    [progress resignCurrent];
     if (*error != nil) {
         return NO;
     }
-    [progress becomeCurrentWithPendingUnitCount:1];
     [self gzipFileAtPath:temporaryPath toPath:destinationPath error:error];
     NSError* removeCacheError = nil;
     [[NSFileManager defaultManager] removeItemAtPath:temporaryPath error:&removeCacheError];
@@ -103,7 +94,6 @@
         *error = removeCacheError;
         return NO;
     }
-    [progress resignCurrent];
     return YES;
 }
 
@@ -125,19 +115,14 @@
                      toPath:(NSString*)destinationPath
                  completion:(void(^)(NSError *))completion {
     NSString *temporaryPath = [self temporaryFilePathForPath:sourcePath];
-    NSProgress *progress = [NSProgress progressWithTotalUnitCount:2];
-    [progress becomeCurrentWithPendingUnitCount:1];
     [self unGzipFileAtPath:sourcePath toPath:temporaryPath completion:^(NSError *gzipError) {
-        [progress resignCurrent];
         if (gzipError != nil) {
             completion(gzipError);
             return;
         }
-        [progress becomeCurrentWithPendingUnitCount:1];
         [self unTarFileAtPath:temporaryPath toPath:destinationPath completion:^(NSError *tarError) {
             NSError* error = nil;
             [[NSFileManager defaultManager] removeItemAtPath:temporaryPath error:&error];
-            [progress resignCurrent];
             if (tarError != nil) {
                 error = tarError;
             }
@@ -164,19 +149,14 @@
                    toPath:(NSString *)destinationPath
                completion:(void(^)(NSError *))completion {
     NSString *temporaryPath = [self temporaryFilePathForPath:destinationPath];
-    NSProgress *progress = [NSProgress progressWithTotalUnitCount:2];
-    [progress becomeCurrentWithPendingUnitCount:1];
     [self tarFileAtPath:sourcePath toPath:temporaryPath completion:^(NSError *tarError) {
-        [progress resignCurrent];
         if (tarError != nil) {
             completion(tarError);
             return;
         }
-        [progress becomeCurrentWithPendingUnitCount:1];
         [self gzipFileAtPath:temporaryPath toPath:destinationPath completion:^(NSError *gzipError) {
             NSError *error = nil;
             [[NSFileManager defaultManager] removeItemAtPath:temporaryPath error:&error];
-            [progress resignCurrent];
             if (gzipError != nil) {
                 error = gzipError;
             }
